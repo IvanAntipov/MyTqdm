@@ -1,0 +1,1 @@
+dotnet pack src/MyTqdm/MyTqdm.csproj -c Release -o Nuget

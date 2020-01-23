@@ -21,31 +21,31 @@ namespace MyTqdm
             [CallerMemberName] string title = "Progress", int? total = null, TimeSpan? updatePeriod = null)
         {
             var actualTotal = ResolveTotal(src, total);
-            var progress = progressFactory.Create(title, actualTotal);
-            return WithProgress<T>(src, progress, updatePeriod);
+            IProgress Progress() => progressFactory.Create(title, actualTotal);
+            return WithProgress<T>(src, Progress, updatePeriod);
         }
         
         public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> src, IConsole console,
             [CallerMemberName] string title = "Progress", int? total = null, TimeSpan? updatePeriod = null)
         {
             var actualTotal = ResolveTotal(src, total);
-            var progress =  new ConsoleProgressFactory(console).Create(title, actualTotal);
-            return WithProgress<T>(src, progress, updatePeriod);
+            IProgress Progress() => new ConsoleProgressFactory(console).Create(title, actualTotal);
+            return WithProgress<T>(src, Progress, updatePeriod);
         }
         
         public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> src, IWrite write,
             [CallerMemberName] string title = "Progress", int? total = null, TimeSpan? updatePeriod = null)
         {
             var actualTotal = ResolveTotal(src, total);
-            var progress = new ForwardOnlyProgress(write, title, actualTotal);
-            return WithProgress<T>(src, progress, updatePeriod);
+            IProgress Progress() => new ForwardOnlyProgress(write, title, actualTotal);
+            return WithProgress<T>(src, Progress, updatePeriod);
         }
         
         
-        public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> src,IProgress progress, TimeSpan? updatePeriod = null)
+        public static IEnumerable<T> WithProgress<T>(this IEnumerable<T> src,Func<IProgress> progressSelector, TimeSpan? updatePeriod = null)
         {
-            
-            progress.Update(0);
+            var progress = progressSelector();
+            progress.Start();
             var current = new Boxed(0);
             var actualUpdatePeriod = updatePeriod ?? TimeSpan.FromSeconds(1);
             var timer = new Timer(o => progress.Update((int) current.Read()), null, actualUpdatePeriod, actualUpdatePeriod);
@@ -120,9 +120,10 @@ namespace MyTqdm
             private readonly IWrite _write;
             private readonly string _title;
             private readonly int? _total;
+            private const int _progressLen = 50;
 
             private static readonly IDictionary<int, string> Percentages =
-                Enumerable.Range(0, 101).ToDictionary(i => i, GetPercentage);
+                Enumerable.Range(0, _progressLen + 1).ToDictionary(i => i, GetProgressString);
 
             public ForwardOnlyProgress(IWrite write, string title, int? total)
             {
@@ -131,15 +132,20 @@ namespace MyTqdm
                 _total = total;
             }
 
+            public void Start()
+            {
+                Update(0);
+            }
+
             public void Update(int current)
             {
                     
                 if (_total.HasValue)
                 {
-                    var percentage = (double) current / (double) _total * 100.0;
-                    var actual = (int)Math.Min(0, Math.Max(100, percentage));
+                    var percentage = (double) current / (double) _total * _progressLen;
+                    var actual = (int)Math.Max(0, Math.Min(100, percentage));
                     var percentageLine = Percentages[actual];
-                    var line = $"{_title} {current} of {_total} {percentageLine}";
+                    var line = $"{_title} {current,5} of {_total} {percentageLine}";
                     _write.WriteLine(line);
                 }
                 else
@@ -149,14 +155,13 @@ namespace MyTqdm
                 }
             }
 
-            private static string GetPercentage(int percentage)
+            private static string GetProgressString(int symbolsCount)
             {
-                //;
                 var sb = new StringBuilder();
                 sb.Append("[");
-                foreach (var i in Enumerable.Range(0,101))
+                foreach (var i in Enumerable.Range(0,_progressLen ))
                 {
-                    if (percentage > i)
+                    if (symbolsCount > i)
                     {
                         sb.Append('#');
                     }
@@ -181,6 +186,11 @@ namespace MyTqdm
                 _title = title;
             }
 
+            public void Start()
+            {
+                Update(0);   
+            }
+
             public void Update(int current)
             {
                 var fullTitle = $"{_title} {current} of {_progressBar.Max}";
@@ -201,6 +211,12 @@ namespace MyTqdm
                 _y = writer.CursorTop;
             }
 
+            public void Start()
+            {
+                Update(0);
+                _writer.WriteLine("");
+            }
+
             public void Update(int current)
             {
                 var fullTitle = $"{_title} [{current}]";
@@ -210,6 +226,7 @@ namespace MyTqdm
                     y : _y,
                     text: fullTitle,
                     null);
+//                _writer.WriteLine("");
             }
         }
     }

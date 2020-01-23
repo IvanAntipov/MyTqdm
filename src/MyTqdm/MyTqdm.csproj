@@ -2,10 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+	<PackageId>MyTqdm</PackageId>
+	<PackageVersion>0.0.1</PackageVersion>
+	<Authors>IvanAntipov</Authors>
+	<Description>tqdm style wrapper for Goblinfactory.Konsole</Description>
+	<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+	<RepositoryUrl>https://github.com/IvanAntipov/MyTqdm</RepositoryUrl>
+	<RepositoryType>git</RepositoryType> 
+	<PackageLicenseExpression>MIT</PackageLicenseExpression> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Goblinfactory.Konsole" Version="5.4.4" />
+    <PackageReference Include="Goblinfactory.Konsole" Version="6.1.0" />
   </ItemGroup>
 
 </Project>

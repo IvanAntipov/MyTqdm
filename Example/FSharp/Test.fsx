@@ -1,23 +1,26 @@
-#load @"c:\PlaygroundGit\ivanplayground\TeskKonsole\.paket\load\net472\Goblinfactory.Konsole.fsx"
-#I @"..\..\src\MyTqdm\bin\Debug\netstandard2.0"
+#I @"..\..\src\Test\bin\Debug"
+#r "Goblinfactory.Konsole.dll"
 #r "MyTqdm.dll"
+
 open MyTqdm
 
 
-let s1 = seq{0 .. 10}
+let s1 = seq{1 .. 10}
 
 let s2 = [1 .. 10] 
 
   
 
 let isIDE = fsi.CommandLineArgs |> Seq.length < 2
+if isIDE then do printfn "IDE mode" else do printfn "Normal mode"
+
 let progressFactory = if isIDE then MyTqdm.ConsoleForwardOnlyProgress else MyTqdm.ConsoleProgress
 
 module Tests =
     let private slow(s) =
         s
         |> Seq.map(fun i ->
-            System.Threading.Thread.Sleep(500)
+            System.Threading.Thread.Sleep(507)
             i)
 
     let private slowList s=    
@@ -46,4 +49,4 @@ test("Simple seq", s1)
 
 test("List ", s2)
 
-testWithExplicitTotal("Simple seq with explicit", s1, 10)
+// testWithExplicitTotal("Simple seq with explicit", s1, 10)
